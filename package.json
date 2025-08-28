@@ -1,0 +1,17 @@
+{
+  "name": "pptx-question-generator",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "install:all": "(cd backend && python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt && python -m spacy download en_core_web_sm || true) && (cd frontend && npm install) && npm i -D concurrently",
+    "start:backend": "backend/.venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload",
+    "start:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently -k -n back,front -c blue,green \"npm:back\" \"npm:front\"",
+    "back": "npm run start:backend",
+    "front": "npm run start:frontend",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

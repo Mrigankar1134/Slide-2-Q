@@ -1,0 +1,37 @@
+# macOS
+.DS_Store
+
+# Node / Vite
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+*.log
+npm-debug.log*
+*.map
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.egg-info/
+.eggs/
+.venv/
+venv/
+backend/.venv/
+
+# Env files (secrets)
+.env
+*.env
+backend/.env
+
+# Models / large artifacts
+backend/models/*.pkl
+
+# IDE/editor
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
