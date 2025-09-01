@@ -34,18 +34,61 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 app = FastAPI(title="PPTX Question Generator", version="0.1.0")
 logger = logging.getLogger("pptx-question-generator")
 
-# CORS Configuration - Allow everything
+# CORS (configurable via env). Set ALLOWED_ORIGINS as a comma-separated list.
+# Example: "https://your-site.netlify.app,http://localhost:5173"
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
+# Default regex allows any Netlify app subdomain as a safe fallback
+allowed_origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", "").strip() or r"https://.*\.netlify\.app"
+
+# Sensible defaults for local dev and the deployed site
+default_allow_origins = [
+    "*",
+]
+
+def _unique_preserve_order(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for it in items:
+        if it not in seen:
+            seen.add(it)
+            out.append(it)
+    return out
+
+if allowed_origins_env:
+    parsed = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+    # If user explicitly requests wildcard, honor it (credentials handled below)
+    if "*" in parsed:
+        allow_origins = ["*"]
+    else:
+        allow_origins = _unique_preserve_order(parsed + default_allow_origins)
+else:
+    allow_origins = list(default_allow_origins)
+
+# Normalize by removing trailing slashes to match browser Origin exactly
+allow_origins = [o.rstrip('/') if o != "*" else o for o in allow_origins]
+
+allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
+# Starlette forbids "*" with credentials. If user sets "*", drop credentials.
+if "*" in allow_origins and allow_credentials:
+    allow_credentials = False
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins
-    allow_credentials=False,  # Must be False when allow_origins=["*"]
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers
+    allow_origins=allow_origins,
+    allow_origin_regex=allowed_origin_regex,
+    allow_credentials=allow_credentials,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Log CORS config for debugging
+# Log effective CORS config for debugging deployments
 try:
-    logger.info("CORS config: allow_origins=['*'], allow_credentials=False")
+    logger.info(
+        "CORS config: allow_origins=%s, allow_origin_regex=%s, allow_credentials=%s",
+        allow_origins,
+        allowed_origin_regex,
+        allow_credentials,
+    )
 except Exception:
     pass
 
@@ -127,9 +170,9 @@ def cors() -> Dict[str, Any]:
     Returns the effective allowlist so we can debug deployments easily.
     """
     return {
-        "allow_origins": ["*"],
-        "allow_origin_regex": "",
-        "allow_credentials": False,
+        "allow_origins": allow_origins,
+        "allow_origin_regex": allowed_origin_regex,
+        "allow_credentials": allow_credentials,
     }
 
 
