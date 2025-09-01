@@ -64,6 +64,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Log effective CORS config for debugging deployments
+try:
+    logger.info(
+        "CORS config: allow_origins=%s, allow_origin_regex=%s, allow_credentials=%s",
+        allow_origins,
+        allowed_origin_regex,
+        allow_credentials,
+    )
+except Exception:
+    pass
+
 VECTORIZER = None
 LDA_MODEL = None
 GEMINI_MODEL = None
