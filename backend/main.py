@@ -44,8 +44,11 @@ else:
     allow_origins = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://slide2q.netlify.app/"
+        "https://slide2q.netlify.app"
     ]
+
+# Normalize by removing trailing slashes to match browser Origin exactly
+allow_origins = [o.rstrip('/') if o != "*" else o for o in allow_origins]
 
 allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
 # Starlette forbids "*" with credentials. If user sets "*", drop credentials.
