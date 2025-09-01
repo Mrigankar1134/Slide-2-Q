@@ -33,11 +33,29 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 app = FastAPI(title="PPTX Question Generator", version="0.1.0")
 logger = logging.getLogger("pptx-question-generator")
 
-# CORS for local dev
+# CORS (configurable via env). Set ALLOWED_ORIGINS as a comma-separated list.
+# Example: "https://your-site.netlify.app,http://localhost:5173"
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
+allowed_origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", "").strip() or None
+if allowed_origins_env:
+    allow_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+else:
+    # Sensible defaults for local dev
+    allow_origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
+# Starlette forbids "*" with credentials. If user sets "*", drop credentials.
+if "*" in allow_origins and allow_credentials:
+    allow_credentials = False
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
-    allow_credentials=True,
+    allow_origins=allow_origins,
+    allow_origin_regex=allowed_origin_regex,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
