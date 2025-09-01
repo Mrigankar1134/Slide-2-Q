@@ -1,6 +1,8 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://slide-2-q.onrender.com'
+// In production (Netlify), default to same-origin '/api' and let Netlify proxy
+// to the Render backend via _redirects. Override with VITE_API_BASE_URL when needed.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,

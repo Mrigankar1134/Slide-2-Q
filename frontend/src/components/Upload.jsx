@@ -39,8 +39,8 @@ export default function Upload({ setLoading, setSlides, setProgress, setAiMeta }
       setAiMeta({ ai_used: !!data.ai_used, ai_model: data.ai_model || null })
     } catch (err) {
       console.error(err)
-      const msg = err?.message || 'Upload failed.'
-      setError(`${msg} Is backend running on 8000?`)
+      const msg = err?.response?.data?.error || err?.message || 'Upload failed.'
+      setError(msg)
     } finally {
       setLoading(false)
     }
