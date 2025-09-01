@@ -19,7 +19,7 @@ export default function App() {
           </div>
           <div className="flex items-center gap-3">
             <a
-              href="https://github.com/Mrigankar1134/Slide-2-Q/"
+              href="https://github.com"
               target="_blank"
               rel="noreferrer"
               className="text-sm text-gray-600 hover:text-gray-900 hover:underline"

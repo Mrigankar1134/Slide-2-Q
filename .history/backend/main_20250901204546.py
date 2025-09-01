@@ -42,13 +42,10 @@ if allowed_origins_env:
 else:
     # Sensible defaults for local dev
     allow_origins = [
-        "https://slide2q.netlify.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://slide2q.netlify.app/"
     ]
-
-# Normalize by removing trailing slashes to match browser Origin exactly
-allow_origins = [o.rstrip('/') if o != "*" else o for o in allow_origins]
 
 allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
 # Starlette forbids "*" with credentials. If user sets "*", drop credentials.
@@ -63,17 +60,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Log effective CORS config for debugging deployments
-try:
-    logger.info(
-        "CORS config: allow_origins=%s, allow_origin_regex=%s, allow_credentials=%s",
-        allow_origins,
-        allowed_origin_regex,
-        allow_credentials,
-    )
-except Exception:
-    pass
 
 VECTORIZER = None
 LDA_MODEL = None
