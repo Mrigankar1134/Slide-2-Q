@@ -38,16 +38,33 @@ logger = logging.getLogger("pptx-question-generator")
 # Example: "https://your-site.netlify.app,http://localhost:5173"
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
 # Default regex allows any Netlify app subdomain as a safe fallback
-allowed_origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", "").strip() or r"https://.*\\.netlify\\.app"
+allowed_origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", "").strip() or r"https://.*\.netlify\.app"
+
+# Sensible defaults for local dev and the deployed site
+default_allow_origins = [
+    "https://slide2q.netlify.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+def _unique_preserve_order(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for it in items:
+        if it not in seen:
+            seen.add(it)
+            out.append(it)
+    return out
+
 if allowed_origins_env:
-    allow_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+    parsed = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+    # If user explicitly requests wildcard, honor it (credentials handled below)
+    if "*" in parsed:
+        allow_origins = ["*"]
+    else:
+        allow_origins = _unique_preserve_order(parsed + default_allow_origins)
 else:
-    # Sensible defaults for local dev
-    allow_origins = [
-        "https://slide2q.netlify.app",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ]
+    allow_origins = list(default_allow_origins)
 
 # Normalize by removing trailing slashes to match browser Origin exactly
 allow_origins = [o.rstrip('/') if o != "*" else o for o in allow_origins]
@@ -145,6 +162,19 @@ def health() -> Dict[str, Any]:
         "vectorizer_loaded": VECTORIZER is not None,
         "lda_loaded": LDA_MODEL is not None,
         "ai_ready": GEMINI_MODEL is not None,
+    }
+
+
+@app.get("/cors")
+def cors() -> Dict[str, Any]:
+    """Quick endpoint to verify CORS behavior from the browser.
+
+    Returns the effective allowlist so we can debug deployments easily.
+    """
+    return {
+        "allow_origins": allow_origins,
+        "allow_origin_regex": allowed_origin_regex,
+        "allow_credentials": allow_credentials,
     }
 
 
