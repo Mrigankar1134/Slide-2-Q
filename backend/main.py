@@ -9,6 +9,7 @@ import numpy as np
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
+from starlette.requests import Request
 
 from backend.utils.rules import generate_varied_questions, clean_text
 import logging
@@ -36,7 +37,8 @@ logger = logging.getLogger("pptx-question-generator")
 # CORS (configurable via env). Set ALLOWED_ORIGINS as a comma-separated list.
 # Example: "https://your-site.netlify.app,http://localhost:5173"
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
-allowed_origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", "").strip() or None
+# Default regex allows any Netlify app subdomain as a safe fallback
+allowed_origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", "").strip() or r"https://.*\\.netlify\\.app"
 if allowed_origins_env:
     allow_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
 else:
@@ -74,6 +76,20 @@ try:
     )
 except Exception:
     pass
+
+
+# Ensure unhandled errors still produce JSON that passes through CORS middleware
+@app.middleware("http")
+async def ensure_cors_on_errors(request: Request, call_next):
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        try:
+            logger.exception("Unhandled server error")
+        except Exception:
+            pass
+        response = JSONResponse(status_code=500, content={"error": "Internal server error"})
+    return response
 
 VECTORIZER = None
 LDA_MODEL = None
